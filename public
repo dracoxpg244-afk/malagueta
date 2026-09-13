@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StreamShare – Transmissão de Tela HD</title>
+  <meta name="description" content="Transmita sua tela em HD para seus amigos. Zero instalação."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+/* ════════════════════════════════════════════════════════
+   RESET & TOKENS
+════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:         #07070e;
+  --bg1:        #0d0d1a;
+  --bg2:        #12121f;
+  --bg3:        #1a1a2e;
+  --bg4:        #22223a;
+  --border:     rgba(255,255,255,0.07);
+  --border2:    rgba(255,255,255,0.12);
+  --border3:    rgba(255,255,255,0.18);
+
+  --p1:  #7c3aed;
+  --p2:  #9333ea;
+  --p3:  #a855f7;
+  --p4:  #c084fc;
+  --p5:  #e9d5ff;
+
+  --blue:  #3b82f6;
+  --cyan:  #06b6d4;
+  --green: #10b981;
+  --red:   #ef4444;
+  --amber: #f59e0b;
+
+  --text:  #f4f0ff;
+  --text2: #a89ec0;
+  --text3: #5c5470;
+  --text4: #3a3450;
+
+  --glass:  rgba(255,255,255,0.035);
+  --glass2: rgba(255,255,255,0.06);
+  --glass3: rgba(255,255,255,0.09);
+
+  --r:   18px;
+  --r2:  12px;
+  --r3:  8px;
+
+  --glow-p: 0 0 40px rgba(124,58,237,0.35);
+  --glow-g: 0 0 40px rgba(16,185,129,0.35);
+}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ════ ANIMATED BACKGROUND ════ */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ════ APP SHELL ════ */
+#app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* ════ HEADER ════ */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 36px;
+  border-bottom:1px solid var(--border);
+  background:rgba(7,7,14,0.75);
+  backdrop-filter:blur(24px) saturate(1.5);
+  position:sticky;top:0;z-index:200;
+}
+.logo{display:flex;align-items:center;gap:14px;text-decoration:none}
+.logo-mark{
+  width:42px;height:42px;border-radius:13px;
+  background:linear-gradient(135deg,var(--p1),var(--p3));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;box-shadow:var(--glow-p);
+  position:relative;overflow:hidden;
+}
+.logo-mark::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);
+}
+.logo-text{font-size:19px;font-weight:800;letter-spacing:-0.6px;
+  background:linear-gradient(90deg,#fff 0%,var(--p4) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-pill{
+  display:flex;align-items:center;gap:8px;padding:7px 16px;
+  border-radius:100px;border:1px solid var(--border2);
+  background:var(--glass2);font-size:13px;color:var(--text2);
+  font-weight:500;
+}
+.live-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 10px var(--green);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+
+/* ════ HOME ════ */
+#home{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:60px 24px 80px;
+}
+.hero{text-align:center;margin-bottom:64px;max-width:700px}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px;border-radius:100px;margin-bottom:28px;
+  background:rgba(124,58,237,.12);border:1px solid rgba(168,85,247,.25);
+  font-size:13px;color:var(--p4);font-weight:600;letter-spacing:.3px;
+}
+.hero h1{
+  font-size:clamp(3rem,7vw,5.5rem);font-weight:900;
+  letter-spacing:-3px;line-height:1.0;margin-bottom:20px;
+  background:linear-gradient(135deg,#fff 0%,#d8b4fe 40%,var(--p3) 80%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{font-size:17px;color:var(--text2);line-height:1.7;max-width:500px;margin:0 auto}
+.hero-features{
+  display:flex;justify-content:center;gap:24px;margin-top:28px;flex-wrap:wrap;
+}
+.feat-chip{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;color:var(--text2);font-weight:500;
+}
+.feat-chip span{color:var(--green);font-size:15px}
+
+.action-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:700px;width:100%}
+
+.acard{
+  position:relative;border-radius:22px;padding:36px 32px;
+  cursor:pointer;overflow:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1);
+  border:1px solid var(--border2);
+}
+.acard::before{
+  content:'';position:absolute;inset:0;
+  background:var(--glass);transition:background .3s;
+}
+.acard-glow{
+  position:absolute;width:200px;height:200px;border-radius:50%;
+  filter:blur(60px);opacity:.25;transition:opacity .3s;
+  pointer-events:none;
+}
+.acard:hover{transform:translateY(-6px) scale(1.015)}
+.acard:hover .acard-glow{opacity:.45}
+.acard:hover::before{background:var(--glass2)}
+.acard > *:not(.acard-glow){position:relative;z-index:1}
+
+.acard.host .acard-glow{background:var(--p2);top:-40px;right:-40px}
+.acard.viewer .acard-glow{background:var(--cyan);bottom:-40px;left:-40px}
+.acard.host{border-color:rgba(147,51,234,.25)}
+.acard.viewer{border-color:rgba(6,182,212,.2)}
+
+.acard-icon{
+  width:68px;height:68px;border-radius:20px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;margin-bottom:24px;
+}
+.acard.host .acard-icon{background:linear-gradient(135deg,rgba(124,58,237,.25),rgba(168,85,247,.15));border:1px solid rgba(168,85,247,.3)}
+.acard.viewer .acard-icon{background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(59,130,246,.15));border:1px solid rgba(6,182,212,.25)}
+
+.acard h2{font-size:22px;font-weight:800;margin-bottom:10px;letter-spacing:-.4px}
+.acard p{font-size:14px;color:var(--text2);line-height:1.65}
+.acard-arrow{
+  display:inline-flex;align-items:center;gap:6px;margin-top:24px;
+  font-size:14px;font-weight:600;
+}
+.acard.host .acard-arrow{color:var(--p4)}
+.acard.viewer .acard-arrow{color:var(--cyan)}
+
+/* ════ SCREENS ════ */
+.screen{display:none;flex:1;flex-direction:row;gap:0;min-height:0}
+.screen.active{display:flex}
+
+/* ════ LAYOUT HALVES ════ */
+.video-side{
+  flex:1;min-width:0;display:flex;flex-direction:column;
+  padding:24px 20px 24px 28px;gap:16px;
+}
+.panel-side{
+  width:340px;flex-shrink:0;
+  background:rgba(13,13,26,0.8);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+.panel-side::-webkit-scrollbar{width:4px}
+.panel-side::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+
+/* ════ BACK ════ */
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:14px;color:var(--text3);cursor:pointer;
+  border:none;background:none;font-family:inherit;
+  transition:color .2s;padding:4px 0;
+}
+.back-btn:hover{color:var(--text2)}
+
+/* ════ VIDEO BOX ════ */
+.video-box{
+  flex:1;border-radius:var(--r);overflow:hidden;
+  background:#000;position:relative;border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  min-height:360px;
+}
+.video-box video{width:100%;height:100%;object-fit:contain;display:none}
+.vid-empty{
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  color:var(--text4);text-align:center;padding:32px;
+}
+.vid-empty-icon{
+  width:80px;height:80px;border-radius:22px;
+  background:var(--glass2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:36px;
+}
+.vid-empty p{font-size:15px;line-height:1.6;max-width:280px}
+
+.vid-badge{
+  position:absolute;top:16px;left:16px;
+  display:none;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:100px;
+  background:rgba(239,68,68,.9);color:#fff;
+  font-size:12px;font-weight:700;letter-spacing:1.5px;
+  backdrop-filter:blur(10px);
+}
+.vid-badge.show{display:flex}
+.vid-badge-dot{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1s infinite}
+
+.vid-viewer-count{
+  position:absolute;top:16px;right:16px;
+  display:none;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:100px;
+  background:rgba(0,0,0,.6);color:var(--text2);
+  font-size:13px;font-weight:600;backdrop-filter:blur(10px);
+  border:1px solid var(--border2);
+}
+.vid-viewer-count.show{display:flex}
+
+/* ════ VIDEO CONTROLS ════ */
+.vid-controls{
+  display:flex;align-items:center;gap:12px;
+  padding:8px 0;flex-wrap:wrap;
+}
+.stat-chip{
+  display:flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:100px;background:var(--glass2);border:1px solid var(--border);
+  font-size:13px;color:var(--text2);
+}
+.stat-chip b{color:var(--text);font-weight:600}
+
+/* ════ PANELS ════ */
+.pblock{padding:24px;border-bottom:1px solid var(--border)}
+.pblock:last-child{border-bottom:none}
+.ptitle{
+  font-size:11px;font-weight:700;letter-spacing:1.5px;
+  color:var(--text3);text-transform:uppercase;margin-bottom:18px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ptitle-count{
+  font-size:12px;padding:2px 8px;border-radius:100px;
+  background:rgba(124,58,237,.15);color:var(--p4);
+  border:1px solid rgba(168,85,247,.2);
+}
+
+/* ════ FORM ════ */
+label{display:block;font-size:12px;font-weight:600;color:var(--text3);margin-bottom:7px;letter-spacing:.3px}
+input[type=text]{
+  width:100%;padding:12px 15px;border-radius:var(--r2);
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text);font-size:15px;font-family:inherit;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+input[type=text]:focus{border-color:var(--p3);box-shadow:0 0 0 3px rgba(168,85,247,.12)}
+input[type=text]::placeholder{color:var(--text4)}
+
+/* ════ BUTTONS ════ */
+.btn{
+  width:100%;padding:13px 20px;border-radius:var(--r2);border:none;
+  cursor:pointer;font-size:15px;font-weight:700;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:all .22s cubic-bezier(.2,.8,.2,1);letter-spacing:.1px;
+}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-primary{
+  background:linear-gradient(135deg,var(--p1) 0%,var(--p3) 100%);color:#fff;
+  box-shadow:0 4px 24px rgba(124,58,237,.45);
+}
+.btn-primary:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,58,237,.6)}
+.btn-primary:not(:disabled):active{transform:translateY(0)}
+.btn-cyan{
+  background:linear-gradient(135deg,#0891b2,var(--cyan));color:#fff;
+  box-shadow:0 4px 24px rgba(6,182,212,.35);
+}
+.btn-cyan:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(6,182,212,.5)}
+.btn-danger{
+  background:rgba(239,68,68,.1);color:var(--red);
+  border:1px solid rgba(239,68,68,.25);
+}
+.btn-danger:not(:disabled):hover{background:rgba(239,68,68,.2)}
+.btn-ghost{
+  background:var(--glass2);color:var(--text2);
+  border:1px solid var(--border2);font-weight:500;
+}
+.btn-ghost:not(:disabled):hover{background:var(--glass3);color:var(--text);border-color:var(--border3)}
+
+/* ════ QUALITY ════ */
+.q-row{display:flex;gap:8px}
+.q-btn{
+  flex:1;padding:9px 6px;border-radius:var(--r3);
+  border:1px solid var(--border2);background:var(--bg3);
+  color:var(--text3);font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .2s;
+}
+.q-btn.active{
+  background:rgba(124,58,237,.18);border-color:var(--p3);
+  color:var(--p4);box-shadow:0 0 16px rgba(168,85,247,.15);
+}
+
+/* ════ ROOM CODE ════ */
+.room-code-card{
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--r2);padding:18px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.room-code-val{
+  font-size:30px;font-weight:900;letter-spacing:8px;
+  background:linear-gradient(90deg,var(--p4),var(--p5));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.icon-btn{
+  padding:9px 14px;border-radius:var(--r3);
+  background:var(--glass3);border:1px solid var(--border3);
+  color:var(--text2);cursor:pointer;font-size:14px;
+  font-family:inherit;transition:all .2s;font-weight:500;
+}
+.icon-btn:hover{color:var(--text);border-color:var(--p3)}
+
+.share-url{
+  background:var(--bg4);border:1px solid var(--border);
+  border-radius:var(--r3);padding:12px 14px;
+  font-size:12px;color:var(--text2);word-break:break-all;line-height:1.6;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+}
+.share-url a{color:var(--p4);text-decoration:none}
+.share-url a:hover{text-decoration:underline}
+
+/* ════ VIEWERS ════ */
+.viewers-wrap{display:flex;flex-direction:column;gap:8px;min-height:20px}
+.vitem{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--bg3);border-radius:10px;border:1px solid var(--border);
+  font-size:14px;font-weight:500;
+  animation:fadeSlide .3s ease-out;
+}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.vitem-av{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;
+}
+.vitem-name{flex:1}
+.vitem-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.empty-msg{text-align:center;color:var(--text4);font-size:13px;padding:20px 0}
+
+/* ════ CHAT ════ */
+.chat-body{
+  flex:1;min-height:220px;max-height:320px;
+  overflow-y:auto;display:flex;flex-direction:column;gap:12px;
+  padding-right:2px;
+}
+.chat-body::-webkit-scrollbar{width:3px}
+.chat-body::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+.cmsg{}
+.cmsg-top{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.cmsg-name{font-size:12px;font-weight:700;color:var(--p4)}
+.cmsg-name.host{color:var(--amber)}
+.cmsg-time{font-size:11px;color:var(--text4)}
+.cmsg-text{
+  font-size:13.5px;color:var(--text);line-height:1.55;
+  padding:8px 12px;background:var(--bg3);
+  border-radius:0 10px 10px 10px;border:1px solid var(--border);
+  display:inline-block;max-width:100%;word-break:break-word;
+}
+.chat-footer{display:flex;gap:8px;margin-top:12px}
+.chat-footer input{flex:1;padding:10px 14px;font-size:14px;border-radius:var(--r3)}
+.chat-send{
+  padding:10px 16px;border-radius:var(--r3);border:none;
+  background:linear-gradient(135deg,var(--p1),var(--p3));
+  color:#fff;cursor:pointer;font-size:17px;
+  transition:opacity .2s,transform .15s;
+}
+.chat-send:hover{opacity:.85;transform:scale(1.05)}
+
+/* ════ DIVIDER ════ */
+.gap{height:12px}
+.gap2{height:20px}
+
+/* ════ TOAST ════ */
+.toast-rack{position:fixed;top:80px;right:24px;z-index:999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{
+  padding:14px 18px;border-radius:var(--r2);
+  font-size:14px;font-weight:500;min-width:260px;
+  backdrop-filter:blur(24px);pointer-events:auto;
+  animation:toastIn .35s cubic-bezier(.2,.8,.2,1);
+  display:flex;align-items:center;gap:10px;
+}
+@keyframes toastIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.ok  {background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7}
+.toast.err {background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:#fca5a5}
+.toast.inf {background:rgba(124,58,237,.12);border:1px solid rgba(168,85,247,.3);color:var(--p4)}
+
+/* ════ LOADER ════ */
+.spin{
+  width:18px;height:18px;border-radius:50%;flex-shrink:0;
+  border:2px solid rgba(255,255,255,.2);border-top-color:#fff;
+  animation:rot .65s linear infinite;
+}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ════ RESPONSIVE ════ */
+@media(max-width:860px){
+  header{padding:14px 20px}
+  .screen.active{flex-direction:column}
+  .panel-side{width:100%;border-left:none;border-top:1px solid var(--border)}
+  .video-side{padding:16px}
+  .hero h1{letter-spacing:-2px}
+}
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="app">
+
+<!-- ── HEADER ─────────────────────────────────────────── -->
+<header>
+  <a class="logo" href="/" onclick="goHome();return false">
+    <div class="logo-mark">🎬</div>
+    <span class="logo-text">StreamShare</span>
+  </a>
+  <div class="nav-pill">
+    <div class="live-dot"></div>
+    Servidor online
+  </div>
+</header>
+
+<!-- ══════════════════ HOME ══════════════════════════════ -->
+<div id="home" style="display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px 80px">
+  <div class="hero">
+    <div class="hero-badge">✦ WebRTC · Zero instalação · HD</div>
+    <h1>Transmissão<br>de Tela</h1>
+    <p>Compartilhe sua tela em alta definição com seus amigos. Eles só precisam abrir um link no navegador.</p>
+    <div class="hero-features">
+      <div class="feat-chip"><span>✓</span> Latência baixa</div>
+      <div class="feat-chip"><span>✓</span> Áudio incluso</div>
+      <div class="feat-chip"><span>✓</span> Até 1080p</div>
+      <div class="feat-chip"><span>✓</span> Chat ao vivo</div>
+    </div>
+  </div>
+  <div class="action-cards">
+    <div class="acard host" onclick="goHost()">
+      <div class="acard-glow"></div>
+      <div class="acard-icon">🖥️</div>
+      <h2>Transmitir</h2>
+      <p>Compartilhe sua tela. Crie uma sala e envie o código para seus amigos.</p>
+      <div class="acard-arrow">Começar a transmitir →</div>
+    </div>
+    <div class="acard viewer" onclick="goViewer()">
+      <div class="acard-glow"></div>
+      <div class="acard-icon">👁️</div>
+      <h2>Assistir</h2>
+      <p>Entre em uma sala com o código recebido e assista em alta qualidade.</p>
+      <div class="acard-arrow">Entrar na sala →</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ HOST ═══════════════════════════════ -->
+<div id="host-screen" class="screen">
+
+  <!-- video side -->
+  <div class="video-side">
+    <div style="display:flex;align-items:center;gap:16px">
+      <button class="back-btn" onclick="goHome()">← Voltar</button>
+    </div>
+
+    <div class="video-box" id="host-vbox">
+      <div class="vid-empty" id="host-empty">
+        <div class="vid-empty-icon">🖥️</div>
+        <p>Clique em <strong>Iniciar Transmissão</strong> para compartilhar sua tela</p>
+      </div>
+      <video id="local-vid" autoplay muted playsinline></video>
+      <div class="vid-badge" id="host-live-badge"><div class="vid-badge-dot"></div>AO VIVO</div>
+      <div class="vid-viewer-count" id="host-vc-overlay">👥 <span id="host-vc-num">0</span></div>
+    </div>
+
+    <div class="vid-controls">
+      <div class="stat-chip">🔴 Status: <b id="h-stat">Parado</b></div>
+      <div class="stat-chip">👥 Espectadores: <b id="h-viewers">0</b></div>
+      <div class="stat-chip">📺 <b id="h-quality">1080p</b></div>
+    </div>
+  </div>
+
+  <!-- panel side -->
+  <div class="panel-side">
+
+    <!-- sala -->
+    <div class="pblock">
+      <div class="ptitle">🚪 Sala</div>
+      <div id="host-setup">
+        <label for="h-room-input">Código da sala (opcional)</label>
+        <input id="h-room-input" type="text" placeholder="Ex: GAMER2025" maxlength="12"/>
+        <div class="gap"></div>
+        <label>Qualidade</label>
+        <div class="q-row" id="q-sel">
+          <button class="q-btn active" data-q="1080" onclick="setQ(this)">1080p</button>
+          <button class="q-btn" data-q="720"  onclick="setQ(this)">720p</button>
+          <button class="q-btn" data-q="480"  onclick="setQ(this)">480p</button>
+        </div>
+        <div class="gap2"></div>
+        <button class="btn btn-primary" id="start-btn" onclick="startStream()">🚀 Iniciar Transmissão</button>
+      </div>
+      <div id="host-live-info" style="display:none">
+        <label>Código da sala</label>
+        <div class="room-code-card">
+          <div class="room-code-val" id="h-code-display">----</div>
+          <button class="icon-btn" onclick="copyCode()">📋 Copiar</button>
+        </div>
+        <div class="gap"></div>
+        <label>Link direto</label>
+        <div class="share-url" id="share-url-box"></div>
+        <div class="gap2"></div>
+        <button class="btn btn-danger" onclick="stopStream()">⏹ Encerrar</button>
+      </div>
+    </div>
+
+    <!-- viewers -->
+    <div class="pblock">
+      <div class="ptitle">
+        👥 Espectadores
+        <span class="ptitle-count" id="h-badge">0</span>
+      </div>
+      <div class="viewers-wrap" id="viewers-list">
+        <div class="empty-msg">Ninguém conectado ainda…</div>
+      </div>
+    </div>
+
+    <!-- chat -->
+    <div class="pblock" style="flex:1;display:flex;flex-direction:column">
+      <div class="ptitle">💬 Chat</div>
+      <div class="chat-body" id="h-chat"></div>
+      <div class="chat-footer">
+        <input type="text" id="h-chat-in" placeholder="Mensagem…" onkeydown="if(event.key==='Enter')chat('host')"/>
+        <button class="chat-send" onclick="chat('host')">➤</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /host -->
+
+<!-- ══════════════════ VIEWER ═════════════════════════════ -->
+<div id="viewer-screen" class="screen">
+
+  <!-- video side -->
+  <div class="video-side">
+    <div>
+      <button class="back-btn" onclick="goHome()">← Voltar</button>
+    </div>
+
+    <div class="video-box" id="viewer-vbox">
+      <div class="vid-empty" id="viewer-empty">
+        <div class="vid-empty-icon">📺</div>
+        <p>Entre na sala para assistir a transmissão ao vivo</p>
+      </div>
+      <video id="remote-vid" autoplay playsinline></video>
+      <div class="vid-badge" id="viewer-live-badge"><div class="vid-badge-dot"></div>AO VIVO</div>
+    </div>
+
+    <div class="vid-controls">
+      <div class="stat-chip">🔴 <b id="v-stat">Desconectado</b></div>
+      <div class="stat-chip">🏠 Sala: <b id="v-room">—</b></div>
+    </div>
+  </div>
+
+  <!-- panel side -->
+  <div class="panel-side">
+
+    <!-- join -->
+    <div class="pblock">
+      <div class="ptitle">🎟️ Entrar na Sala</div>
+      <div id="viewer-form">
+        <label for="v-name">Seu nome</label>
+        <input id="v-name" type="text" placeholder="Como quer ser chamado?" maxlength="24"/>
+        <div class="gap"></div>
+        <label for="v-room">Código da sala</label>
+        <input id="v-room" type="text" placeholder="Ex: GAMER2025" maxlength="12" style="text-transform:uppercase"/>
+        <div class="gap2"></div>
+        <button class="btn btn-cyan" id="join-btn" onclick="joinRoom()">🎬 Entrar</button>
+      </div>
+      <div id="viewer-joined" style="display:none">
+        <label>Sala conectada</label>
+        <div class="room-code-card">
+          <div class="room-code-val" id="v-code-display">----</div>
+        </div>
+        <div class="gap2"></div>
+        <button class="btn btn-danger" onclick="leaveRoom()">🚪 Sair da Sala</button>
+      </div>
+    </div>
+
+    <!-- chat -->
+    <div class="pblock" style="flex:1;display:flex;flex-direction:column">
+      <div class="ptitle">💬 Chat</div>
+      <div class="chat-body" id="v-chat"></div>
+      <div class="chat-footer">
+        <input type="text" id="v-chat-in" placeholder="Mensagem…" onkeydown="if(event.key==='Enter')chat('viewer')"/>
+        <button class="chat-send" onclick="chat('viewer')">➤</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /viewer -->
+
+</div><!-- /app -->
+<div class="toast-rack" id="toasts"></div>
+
+<script>
+/* ══ Background Canvas ═══════════════════════════════════ */
+(function(){
+  const c=document.getElementById('bg-canvas');
+  const ctx=c.getContext('2d');
+  let w,h,pts=[];
+  function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;pts=[];for(let i=0;i<55;i++)pts.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35,r:Math.random()*1.8+.6})}
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    // glows
+    const g1=ctx.createRadialGradient(w*.2,h*.1,0,w*.2,h*.1,w*.5);g1.addColorStop(0,'rgba(124,58,237,.12)');g1.addColorStop(1,'transparent');ctx.fillStyle=g1;ctx.fillRect(0,0,w,h);
+    const g2=ctx.createRadialGradient(w*.85,h*.85,0,w*.85,h*.85,w*.45);g2.addColorStop(0,'rgba(6,182,212,.07)');g2.addColorStop(1,'transparent');ctx.fillStyle=g2;ctx.fillRect(0,0,w,h);
+    // dots & lines
+    pts.forEach((p,i)=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>w)p.vx*=-1;
+      if(p.y<0||p.y>h)p.vy*=-1;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(168,85,247,.35)';ctx.fill();
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[j].x-p.x,dy=pts[j].y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<120){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(124,58,237,${.12*(1-dist/120)})`;ctx.lineWidth=.7;ctx.stroke()}
+      }
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',resize);resize();draw();
+})();
+
+/* ══ State ════════════════════════════════════════════════ */
+let ws=null,localStream=null,pcs={},viewerPC=null;
+let role=null,roomId=null,viewerId=null,viewerName='';
+let viewers={};
+let qCfg={w:1920,h:1080,fps:30,bps:4500000};
+
+const ICE={iceServers:[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun2.l.google.com:19302'},
+  {urls:'stun:stun.stunprotocol.org:3478'},
+]};
+
+/* ══ Nav ══════════════════════════════════════════════════ */
+function hide(id){const el=document.getElementById(id);if(el)el.style.display='none'}
+function goHome(){
+  document.getElementById('home').style.display='flex';
+  document.getElementById('host-screen').classList.remove('active');
+  document.getElementById('viewer-screen').classList.remove('active');
+  disconnect();
+}
+function goHost(){
+  document.getElementById('home').style.display='none';
+  document.getElementById('host-screen').classList.add('active');
+  document.getElementById('viewer-screen').classList.remove('active');
+  wsConnect();
+}
+function goViewer(){
+  document.getElementById('home').style.display='none';
+  document.getElementById('viewer-screen').classList.add('active');
+  document.getElementById('host-screen').classList.remove('active');
+  wsConnect();
+}
+
+/* ══ WebSocket ════════════════════════════════════════════ */
+function wsConnect(){
+  if(ws&&ws.readyState<=1)return;
+  const proto=location.protocol==='https:'?'wss:':'ws:';
+  ws=new WebSocket(`${proto}//${location.host}`);
+  ws.onmessage=e=>onMsg(JSON.parse(e.data));
+  ws.onerror=()=>toast('Erro de conexão','err');
+}
+function wsSend(d){if(ws&&ws.readyState===1)ws.send(JSON.stringify(d))}
+function disconnect(){
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
+  Object.values(pcs).forEach(p=>p.close());pcs={};
+  if(viewerPC){viewerPC.close();viewerPC=null}
+  if(ws){ws.close();ws=null}
+  role=null;roomId=null;viewers={};
+}
+
+/* ══ Messages ════════════════════════════════════════════ */
+async function onMsg(m){
+  switch(m.type){
+    case 'room-created':
+      roomId=m.roomId;showRoomInfo(m.roomId);
+      toast(`Sala ${m.roomId} criada!`,'ok');break;
+    case 'joined':
+      roomId=m.roomId;viewerId=m.viewerId;
+      document.getElementById('v-code-display').textContent=m.roomId;
+      document.getElementById('v-room').textContent=m.roomId;
+      document.getElementById('v-stat').textContent=m.hostPresent?'Aguardando…':'Host offline';
+      document.getElementById('viewer-form').style.display='none';
+      document.getElementById('viewer-joined').style.display='block';
+      toast('Entrou na sala!','ok');break;
+    case 'viewer-joined':
+      viewers[m.viewerId]=m.name;updateViewers();updateVC(m.count);
+      mkOffer(m.viewerId);toast(`${m.name} entrou`,'inf');break;
+    case 'viewer-left':
+      delete viewers[m.viewerId];
+      if(pcs[m.viewerId]){pcs[m.viewerId].close();delete pcs[m.viewerId]}
+      updateViewers();updateVC(m.count);toast(`${m.name} saiu`,'inf');break;
+    case 'offer':await handleOffer(m.sdp);break;
+    case 'answer':
+      if(pcs[m.fromId])await pcs[m.fromId].setRemoteDescription(new RTCSessionDescription(m.sdp));break;
+    case 'candidate':
+      if(role==='host'){const pc=pcs[m.fromId];if(pc&&m.candidate)await pc.addIceCandidate(new RTCIceCandidate(m.candidate))}
+      else{if(viewerPC&&m.candidate)await viewerPC.addIceCandidate(new RTCIceCandidate(m.candidate))}break;
+    case 'chat':addMsg(m.name,m.text,m.time,m.isHost);break;
+    case 'stream-ended':endStream();break;
+    case 'error':toast(m.message,'err');break;
+  }
+}
+
+/* ══ Host ════════════════════════════════════════════════ */
+async function startStream(){
+  const btn=document.getElementById('start-btn');
+  btn.disabled=true;
+  btn.innerHTML='<div class="spin"></div> Capturando tela…';
+  try{
+    localStream=await navigator.mediaDevices.getDisplayMedia({
+      video:{width:{ideal:qCfg.w},height:{ideal:qCfg.h},frameRate:{ideal:qCfg.fps},cursor:'always'},
+      audio:{echoCancellation:false,noiseSuppression:false,sampleRate:48000}
+    });
+    localStream.getVideoTracks()[0].addEventListener('ended',stopStream);
+    const v=document.getElementById('local-vid');
+    v.srcObject=localStream;v.style.display='block';
+    document.getElementById('host-empty').style.display='none';
+    document.getElementById('host-live-badge').classList.add('show');
+    document.getElementById('host-vc-overlay').classList.add('show');
+    document.getElementById('h-stat').textContent='Ao vivo 🔴';
+    role='host';
+    const rid=document.getElementById('h-room-input').value.trim().toUpperCase()||'';
+    wsSend({type:'host-create',roomId:rid});
+  }catch(e){
+    btn.disabled=false;btn.innerHTML='🚀 Iniciar Transmissão';
+    if(e.name!=='NotAllowedError')toast('Erro: '+e.message,'err');
+  }
+}
+function showRoomInfo(rid){
+  document.getElementById('host-setup').style.display='none';
+  document.getElementById('host-live-info').style.display='block';
+  document.getElementById('h-code-display').textContent=rid;
+  const link=`${location.protocol}//${location.host}/?sala=${encodeURIComponent(rid)}`;
+  document.getElementById('share-url-box').innerHTML=`Envie para seus amigos: <a href="${link}" target="_blank">${link}</a>`;
+}
+async function stopStream(){
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
+  Object.values(pcs).forEach(p=>p.close());pcs={};
+  wsSend({type:'end-stream'});
+  const v=document.getElementById('local-vid');v.srcObject=null;v.style.display='none';
+  document.getElementById('host-empty').style.display='flex';
+  document.getElementById('host-live-badge').classList.remove('show');
+  document.getElementById('host-vc-overlay').classList.remove('show');
+  document.getElementById('h-stat').textContent='Parado';
+  document.getElementById('host-setup').style.display='block';
+  document.getElementById('host-live-info').style.display='none';
+  document.getElementById('start-btn').disabled=false;
+  document.getElementById('start-btn').innerHTML='🚀 Iniciar Transmissão';
+  viewers={};updateViewers();toast('Transmissão encerrada','inf');
+}
+async function mkOffer(vid){
+  if(!localStream)return;
+  const pc=new RTCPeerConnection(ICE);pcs[vid]=pc;
+  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+  pc.onicecandidate=e=>{if(e.candidate)wsSend({type:'candidate',candidate:e.candidate,targetId:vid})};
+  const offer=await pc.createOffer();
+  offer.sdp=injectBitrate(offer.sdp,qCfg.bps);
+  await pc.setLocalDescription(offer);
+  wsSend({type:'offer',sdp:pc.localDescription,targetId:vid});
+}
+
+/* ══ Viewer ══════════════════════════════════════════════ */
+async function handleOffer(sdp){
+  if(viewerPC)viewerPC.close();
+  viewerPC=new RTCPeerConnection(ICE);
+  viewerPC.ontrack=e=>{
+    const v=document.getElementById('remote-vid');
+    v.srcObject=e.streams?e.streams[0]:new MediaStream([e.track]);
+    v.style.display='block';
+    document.getElementById('viewer-empty').style.display='none';
+    document.getElementById('viewer-live-badge').classList.add('show');
+    document.getElementById('v-stat').textContent='Ao vivo ▶';
+  };
+  viewerPC.onicecandidate=e=>{if(e.candidate)wsSend({type:'candidate',candidate:e.candidate})};
+  await viewerPC.setRemoteDescription(new RTCSessionDescription(sdp));
+  const ans=await viewerPC.createAnswer();
+  await viewerPC.setLocalDescription(ans);
+  wsSend({type:'answer',sdp:viewerPC.localDescription});
+}
+function endStream(){
+  const v=document.getElementById('remote-vid');v.srcObject=null;v.style.display='none';
+  document.getElementById('viewer-empty').style.display='flex';
+  document.getElementById('viewer-live-badge').classList.remove('show');
+  document.getElementById('v-stat').textContent='Encerrado';
+  toast('Host encerrou a transmissão','inf');
+}
+function joinRoom(){
+  const name=document.getElementById('v-name').value.trim()||'Visitante';
+  const rid=document.getElementById('v-room').value.trim().toUpperCase();
+  if(!rid){toast('Digite o código da sala','err');return}
+  role='viewer';viewerName=name;
+  document.getElementById('v-room').textContent=rid;
+  wsSend({type:'viewer-join',roomId:rid,name});
+}
+function leaveRoom(){
+  if(viewerPC){viewerPC.close();viewerPC=null}
+  ws.close();ws=null;
+  document.getElementById('viewer-form').style.display='block';
+  document.getElementById('viewer-joined').style.display='none';
+  endStream();role=null;roomId=null;toast('Saiu da sala','inf');wsConnect();
+}
+
+/* ══ Chat ════════════════════════════════════════════════ */
+function chat(r){
+  const inp=document.getElementById(r==='host'?'h-chat-in':'v-chat-in');
+  const t=inp.value.trim();if(!t)return;
+  wsSend({type:'chat',text:t});inp.value='';
+}
+function addMsg(name,text,time,isHost){
+  ['h-chat','v-chat'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const d=document.createElement('div');d.className='cmsg';
+    d.innerHTML=`<div class="cmsg-top"><span class="cmsg-name${isHost?' host':''}">${esc(name)}</span><span class="cmsg-time">${time}</span></div><div class="cmsg-text">${esc(text)}</div>`;
+    el.appendChild(d);el.scrollTop=el.scrollHeight;
+  });
+}
+
+/* ══ Viewers List ════════════════════════════════════════ */
+const colors=['#7c3aed','#2563eb','#0891b2','#059669','#d97706','#dc2626'];
+function updateViewers(){
+  const el=document.getElementById('viewers-list');
+  const entries=Object.entries(viewers);
+  if(!entries.length){el.innerHTML='<div class="empty-msg">Ninguém conectado ainda…</div>';return}
+  el.innerHTML=entries.map(([id,n],i)=>`
+    <div class="vitem">
+      <div class="vitem-av" style="background:${colors[i%colors.length]}">${n[0].toUpperCase()}</div>
+      <div class="vitem-name">${esc(n)}</div>
+      <div class="vitem-dot"></div>
+    </div>`).join('');
+}
+function updateVC(n){
+  document.getElementById('h-viewers').textContent=n;
+  document.getElementById('h-badge').textContent=n;
+  document.getElementById('host-vc-num').textContent=n;
+}
+
+/* ══ Quality ════════════════════════════════════════════ */
+const qMap={
+  '1080':{w:1920,h:1080,fps:30,bps:4500000},
+  '720': {w:1280,h:720, fps:30,bps:2500000},
+  '480': {w:854, h:480, fps:30,bps:1000000},
+};
+function setQ(btn){
+  document.querySelectorAll('.q-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');qCfg=qMap[btn.dataset.q];
+  document.getElementById('h-quality').textContent=btn.dataset.q+'p';
+}
+
+/* ══ Helpers ════════════════════════════════════════════ */
+function injectBitrate(sdp,bps){
+  return sdp.replace(/b=AS:\d+\r\n/g,'')
+    .replace(/(a=mid:video\r\n)/,`$1b=AS:${Math.round(bps/1000)}\r\n`);
+}
+function copyCode(){
+  navigator.clipboard.writeText(roomId).then(()=>toast('Código copiado!','ok'));
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function toast(msg,type='inf'){
+  const r=document.getElementById('toasts');
+  const t=document.createElement('div');t.className=`toast ${type}`;
+  const ic={ok:'✅',err:'❌',inf:'ℹ️'};
+  t.innerHTML=`${ic[type]||'ℹ️'} ${msg}`;r.appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+/* ══ Auto-join from URL ════════════════════════════════ */
+(function(){
+  const sala=new URLSearchParams(location.search).get('sala');
+  if(sala){goViewer();document.getElementById('v-room').value=sala.toUpperCase();toast(`Código ${sala.toUpperCase()} detectado!`,'inf')}
+})();
+</script>
+</body>
+</html>
