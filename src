@@ -1,0 +1,208 @@
+// ZyonRobloxESP - C++17 / Windows 10+ / MSVC
+// Overlay demonstrativo: usa entidades sintéticas locais; não lê nem altera memória de processos.
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <string>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <cmath>
+
+struct Vec2 { float x{}, y{}; };
+struct Player {
+    std::wstring name;
+    Vec2 root;
+    float distance{};
+    float health{100}, maxHealth{100};
+    int team{};
+    bool visible{true};
+};
+
+struct Settings {
+    bool enabled = true;
+    bool names = true;
+    bool distance = true;
+    bool boxes = true;
+    bool skeleton = true;
+    bool health = true;
+    bool teamCheck = false;
+    bool showMenu = true;
+    float maxDistance = 500.0f;
+    int localTeam = 1;
+} cfg;
+
+static HWND g_hwnd{};
+static int g_width{}, g_height{};
+static HFONT g_font{};
+static bool g_running = true;
+static std::vector<Player> g_players;
+
+COLORREF Accent() { return RGB(60, 160, 255); }
+void SaveConfig() {
+    std::ofstream f("config.ini");
+    if (!f) return;
+    f << "enabled=" << cfg.enabled << "\n"
+      << "names=" << cfg.names << "\n"
+      << "distance=" << cfg.distance << "\n"
+      << "boxes=" << cfg.boxes << "\n"
+      << "skeleton=" << cfg.skeleton << "\n"
+      << "health=" << cfg.health << "\n"
+      << "teamCheck=" << cfg.teamCheck << "\n"
+      << "maxDistance=" << cfg.maxDistance << "\n"
+      << "localTeam=" << cfg.localTeam << "\n";
+}
+void LoadConfig() {
+    std::ifstream f("config.ini");
+    std::string line;
+    while (std::getline(f, line)) {
+        auto p = line.find('=');
+        if (p == std::string::npos) continue;
+        auto k = line.substr(0,p), v = line.substr(p+1);
+        if (k=="enabled") cfg.enabled = v=="1";
+        else if (k=="names") cfg.names = v=="1";
+        else if (k=="distance") cfg.distance = v=="1";
+        else if (k=="boxes") cfg.boxes = v=="1";
+        else if (k=="skeleton") cfg.skeleton = v=="1";
+        else if (k=="health") cfg.health = v=="1";
+        else if (k=="teamCheck") cfg.teamCheck = v=="1";
+        else if (k=="maxDistance") cfg.maxDistance = std::stof(v);
+        else if (k=="localTeam") cfg.localTeam = std::stoi(v);
+    }
+}
+void MakeDemoPlayers() {
+    g_players = {
+        {L"Player_A", {g_width*.30f,g_height*.48f}, 42, 82,100,2,true},
+        {L"Player_B", {g_width*.52f,g_height*.36f}, 116, 55,100,2,true},
+        {L"Player_C", {g_width*.72f,g_height*.55f}, 238, 100,100,1,true},
+        {L"Player_D", {g_width*.43f,g_height*.70f}, 390, 27,100,3,true}
+    };
+}
+void Line(HDC dc, int x1,int y1,int x2,int y2,COLORREF c,int width=2) {
+    HPEN pen=CreatePen(PS_SOLID,width,c), old=(HPEN)SelectObject(dc,pen);
+    MoveToEx(dc,x1,y1,nullptr); LineTo(dc,x2,y2);
+    SelectObject(dc,old); DeleteObject(pen);
+}
+void Rect(HDC dc,int x,int y,int w,int h,COLORREF c,int width=2) {
+    HPEN pen=CreatePen(PS_SOLID,width,c), old=(HPEN)SelectObject(dc,pen);
+    HBRUSH hollow=(HBRUSH)GetStockObject(HOLLOW_BRUSH), oldB=(HBRUSH)SelectObject(dc,hollow);
+    Rectangle(dc,x,y,x+w,y+h);
+    SelectObject(dc,oldB); SelectObject(dc,old); DeleteObject(pen);
+}
+void Text(HDC dc,int x,int y,const std::wstring& s,COLORREF c=RGB(245,245,245)) {
+    SetBkMode(dc,TRANSPARENT); SetTextColor(dc,c);
+    HFONT old=(HFONT)SelectObject(dc,g_font);
+    TextOutW(dc,x,y,s.c_str(),(int)s.size());
+    SelectObject(dc,old);
+}
+void DrawSkeleton(HDC dc,int cx,int top,int bottom,COLORREF c) {
+    int headY=top+8, neckY=top+24, hipY=top+62, footY=bottom-3;
+    int shoulderL=cx-15, shoulderR=cx+15, elbowL=cx-23, elbowR=cx+23;
+    int handL=cx-28, handR=cx+28, kneeL=cx-10, kneeR=cx+10;
+    Line(dc,cx,neckY,cx,hipY,c);
+    Line(dc,cx,neckY,shoulderL,neckY+12,c); Line(dc,shoulderL,neckY+12,elbowL,neckY+29,c);
+    Line(dc,elbowL,neckY+29,handL,hipY-2,c);
+    Line(dc,cx,neckY,shoulderR,neckY+12,c); Line(dc,shoulderR,neckY+12,elbowR,neckY+29,c);
+    Line(dc,elbowR,neckY+29,handR,hipY-2,c);
+    Line(dc,cx,hipY,kneeL,hipY+20,c); Line(dc,kneeL,hipY+20,cx-13,footY,c);
+    Line(dc,cx,hipY,kneeR,hipY+20,c); Line(dc,kneeR,hipY+20,cx+13,footY,c);
+    Ellipse(dc,cx-5,headY-5,cx+5,headY+5);
+}
+void DrawMenu(HDC dc) {
+    if (!cfg.showMenu) return;
+    RECT r{18,18,300,300};
+    HBRUSH b=CreateSolidBrush(RGB(20,23,30)); FillRect(dc,&r,b); DeleteObject(b);
+    Rect(dc,18,18,282,282,Accent(),1);
+    Text(dc,30,29,L"ZYON  |  EXTERNAL OVERLAY",Accent());
+    Text(dc,30,56,L"F1  Overlay:       " + std::wstring(cfg.enabled?L"ON":L"OFF"));
+    Text(dc,30,78,L"F2  Names:         " + std::wstring(cfg.names?L"ON":L"OFF"));
+    Text(dc,30,100,L"F3  Distance:      " + std::wstring(cfg.distance?L"ON":L"OFF"));
+    Text(dc,30,122,L"F4  2D Boxes:      " + std::wstring(cfg.boxes?L"ON":L"OFF"));
+    Text(dc,30,144,L"F5  Skeleton:      " + std::wstring(cfg.skeleton?L"ON":L"OFF"));
+    Text(dc,30,166,L"F6  Health:        " + std::wstring(cfg.health?L"ON":L"OFF"));
+    Text(dc,30,188,L"F7  Team check:    " + std::wstring(cfg.teamCheck?L"ON":L"OFF"));
+    Text(dc,30,210,L"F8  Hide/show menu");
+    Text(dc,30,232,L"F9  Save config.ini");
+    Text(dc,30,254,L"F10 Demo entities | END quit",RGB(180,185,195));
+    Text(dc,30,276,L"Demo data only — no process access",RGB(150,155,165));
+}
+void Render(HDC dc) {
+    RECT full{0,0,g_width,g_height};
+    HBRUSH clear=CreateSolidBrush(RGB(0,0,0)); FillRect(dc,&full,clear); DeleteObject(clear);
+    if (cfg.enabled) {
+        for (const auto& p : g_players) {
+            if (!p.visible || p.distance > cfg.maxDistance) continue;
+            if (cfg.teamCheck && p.team == cfg.localTeam) continue;
+            int cx=(int)p.root.x, cy=(int)p.root.y;
+            int boxW=48, boxH=104, left=cx-boxW/2, top=cy-boxH/2, bottom=top+boxH;
+            COLORREF col = (p.team==cfg.localTeam) ? RGB(100,190,255) : RGB(70,230,130);
+            if (cfg.boxes) Rect(dc,left,top,boxW,boxH,col);
+            if (cfg.skeleton) DrawSkeleton(dc,cx,top,bottom,col);
+            if (cfg.health) {
+                int barH=(int)(boxH*std::clamp(p.health/p.maxHealth,0.0f,1.0f));
+                Rect(dc,left-7,top,4,boxH,RGB(70,70,70),1);
+                RECT hr{left-6,bottom-barH,left-4,bottom};
+                HBRUSH hb=CreateSolidBrush(RGB(65,220,110)); FillRect(dc,&hr,hb); DeleteObject(hb);
+            }
+            std::wstring label;
+            if (cfg.names) label=p.name;
+            if (cfg.distance) {
+                if (!label.empty()) label+=L"  ";
+                label+=L"[" + std::to_wstring((int)p.distance) + L"m]";
+            }
+            if (!label.empty()) Text(dc,left-12,top-20,label);
+        }
+    }
+    DrawMenu(dc);
+}
+LRESULT CALLBACK WndProc(HWND h,UINT m,WPARAM w,LPARAM l) {
+    switch(m) {
+    case WM_DESTROY: PostQuitMessage(0); return 0;
+    case WM_DISPLAYCHANGE: InvalidateRect(h,nullptr,FALSE); return 0;
+    }
+    return DefWindowProcW(h,m,w,l);
+}
+void Toggle(bool& v) { v=!v; }
+int WINAPI wWinMain(HINSTANCE inst,HINSTANCE, PWSTR,int) {
+    LoadConfig();
+    g_width=GetSystemMetrics(SM_CXSCREEN); g_height=GetSystemMetrics(SM_CYSCREEN);
+    MakeDemoPlayers();
+    g_font=CreateFontW(16,0,0,0,FW_MEDIUM,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY,DEFAULT_PITCH,L"Segoe UI");
+    WNDCLASSW wc{}; wc.lpfnWndProc=WndProc; wc.hInstance=inst; wc.lpszClassName=L"ZyonESPOverlay";
+    wc.hCursor=LoadCursor(nullptr,IDC_ARROW); RegisterClassW(&wc);
+    g_hwnd=CreateWindowExW(WS_EX_TOPMOST|WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOOLWINDOW,
+        wc.lpszClassName,L"Zyon Roblox ESP Demo",WS_POPUP,0,0,g_width,g_height,nullptr,nullptr,inst,nullptr);
+    SetLayeredWindowAttributes(g_hwnd,RGB(0,0,0),0,LWA_COLORKEY);
+    ShowWindow(g_hwnd,SW_SHOW); UpdateWindow(g_hwnd);
+    MSG msg{};
+    while(g_running) {
+        while(PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)) {
+            if(msg.message==WM_QUIT) g_running=false;
+            TranslateMessage(&msg); DispatchMessageW(&msg);
+        }
+        if(GetAsyncKeyState(VK_END)&1) g_running=false;
+        if(GetAsyncKeyState(VK_F1)&1) Toggle(cfg.enabled);
+        if(GetAsyncKeyState(VK_F2)&1) Toggle(cfg.names);
+        if(GetAsyncKeyState(VK_F3)&1) Toggle(cfg.distance);
+        if(GetAsyncKeyState(VK_F4)&1) Toggle(cfg.boxes);
+        if(GetAsyncKeyState(VK_F5)&1) Toggle(cfg.skeleton);
+        if(GetAsyncKeyState(VK_F6)&1) Toggle(cfg.health);
+        if(GetAsyncKeyState(VK_F7)&1) Toggle(cfg.teamCheck);
+        if(GetAsyncKeyState(VK_F8)&1) Toggle(cfg.showMenu);
+        if(GetAsyncKeyState(VK_F9)&1) SaveConfig();
+        if(GetAsyncKeyState(VK_F10)&1) MakeDemoPlayers();
+        HDC screen=GetDC(g_hwnd), mem=CreateCompatibleDC(screen);
+        HBITMAP bmp=CreateCompatibleBitmap(screen,g_width,g_height);
+        HBITMAP old=(HBITMAP)SelectObject(mem,bmp);
+        Render(mem);
+        BitBlt(screen,0,0,g_width,g_height,mem,0,0,SRCCOPY);
+        SelectObject(mem,old); DeleteObject(bmp); DeleteDC(mem); ReleaseDC(g_hwnd,screen);
+        Sleep(16);
+    }
+    SaveConfig();
+    DestroyWindow(g_hwnd);
+    DeleteObject(g_font);
+    return 0;
+}
