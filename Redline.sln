@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{EDE0D7C1-6F44-4114-A015-93FC1DFFCA9F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redline.Core", "src\Redline.Core\Redline.Core.csproj", "{EDD0FB55-CD50-46DA-8D08-B770B5293F98}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redline.Api", "src\Redline.Api\Redline.Api.csproj", "{8CC76B22-7F76-4F58-AAA9-4E54D6385687}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redline.Admin", "src\Redline.Admin\Redline.Admin.csproj", "{0F1D9642-95E9-4B13-B1D9-15841F5DCB2E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redline.Launcher", "src\Redline.Launcher\Redline.Launcher.csproj", "{2CC48722-7EE3-4C0C-B15B-3F19C87C2CFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redline.Installer", "src\Redline.Installer\Redline.Installer.csproj", "{E6B3BBFA-CF11-48EF-BC37-D1E1BBCD10B2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8A68711D-E3F8-4D40-8D59-8041DB4908D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redline.Tests", "tests\Redline.Tests\Redline.Tests.csproj", "{D5F87173-BD8D-4B4E-B177-735FBB8C3B34}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EDD0FB55-CD50-46DA-8D08-B770B5293F98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDD0FB55-CD50-46DA-8D08-B770B5293F98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDD0FB55-CD50-46DA-8D08-B770B5293F98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDD0FB55-CD50-46DA-8D08-B770B5293F98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CC76B22-7F76-4F58-AAA9-4E54D6385687}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CC76B22-7F76-4F58-AAA9-4E54D6385687}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CC76B22-7F76-4F58-AAA9-4E54D6385687}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CC76B22-7F76-4F58-AAA9-4E54D6385687}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F1D9642-95E9-4B13-B1D9-15841F5DCB2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F1D9642-95E9-4B13-B1D9-15841F5DCB2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F1D9642-95E9-4B13-B1D9-15841F5DCB2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F1D9642-95E9-4B13-B1D9-15841F5DCB2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CC48722-7EE3-4C0C-B15B-3F19C87C2CFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CC48722-7EE3-4C0C-B15B-3F19C87C2CFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CC48722-7EE3-4C0C-B15B-3F19C87C2CFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CC48722-7EE3-4C0C-B15B-3F19C87C2CFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6B3BBFA-CF11-48EF-BC37-D1E1BBCD10B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6B3BBFA-CF11-48EF-BC37-D1E1BBCD10B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6B3BBFA-CF11-48EF-BC37-D1E1BBCD10B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6B3BBFA-CF11-48EF-BC37-D1E1BBCD10B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5F87173-BD8D-4B4E-B177-735FBB8C3B34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5F87173-BD8D-4B4E-B177-735FBB8C3B34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5F87173-BD8D-4B4E-B177-735FBB8C3B34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5F87173-BD8D-4B4E-B177-735FBB8C3B34}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EDD0FB55-CD50-46DA-8D08-B770B5293F98} = {EDE0D7C1-6F44-4114-A015-93FC1DFFCA9F}
+		{8CC76B22-7F76-4F58-AAA9-4E54D6385687} = {EDE0D7C1-6F44-4114-A015-93FC1DFFCA9F}
+		{0F1D9642-95E9-4B13-B1D9-15841F5DCB2E} = {EDE0D7C1-6F44-4114-A015-93FC1DFFCA9F}
+		{2CC48722-7EE3-4C0C-B15B-3F19C87C2CFB} = {EDE0D7C1-6F44-4114-A015-93FC1DFFCA9F}
+		{E6B3BBFA-CF11-48EF-BC37-D1E1BBCD10B2} = {EDE0D7C1-6F44-4114-A015-93FC1DFFCA9F}
+		{D5F87173-BD8D-4B4E-B177-735FBB8C3B34} = {8A68711D-E3F8-4D40-8D59-8041DB4908D3}
+	EndGlobalSection
+EndGlobal
